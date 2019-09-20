@@ -10,7 +10,7 @@ PGraphics buf2;
 
 Kinect kinect;
 HashMap <Integer, SkeletonData> skeletons;
- 
+
 void setup()
 {
   //size(640, 480, P2D);
@@ -52,9 +52,10 @@ void draw()
   //image(mask, 0, 0, width, height);
 
   buf1.beginDraw();
-  buf1.image(buf2, 0, 0);
+  buf1.image(buf2, 0, 0); // apply feedback
   buf1.image(mask, 0, 0, buf1.width, buf1.height);
   buf1.endDraw();
+
 
   buf2.beginDraw();
   buf2.shader(feedbackShader);
@@ -78,6 +79,7 @@ void draw()
   for(Map.Entry<Integer, SkeletonData> e: skeletons.entrySet()) {
     SkeletonData s = e.getValue();
     if(isTracking(s, head_idx))  {
+      //TODO: lowpass filter position
       PVector pos = s.skeletonPositions[head_idx];
       rectMode(RADIUS);
       //rect(map(pos.x, 0, 1, 0, width), map(pos.y, 0, 1, 0, height), 50, 50);
@@ -88,11 +90,16 @@ void draw()
        PVector pos_l = s.skeletonPositions[Kinect.NUI_SKELETON_POSITION_WRIST_LEFT];
        PVector pos_r = s.skeletonPositions[Kinect.NUI_SKELETON_POSITION_WRIST_RIGHT];
 
+
        pos_l.z = 0;
        pos_r.z = 0;
 
+       //TODO: scale delta by shoulder width
        float delta = pos_l.dist(pos_r);
        feedbackShader.set("feedbackScale", map(delta, 0, 1, 1.2, 0.8));
+
+       //TODO: rectangle offset distortion
+
        println(pos_l, pos_r, delta);
        
     }
