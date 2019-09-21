@@ -87,8 +87,10 @@ void draw()
        feedbackShader.set("feedbackScale", map(delta, 0, 1, 1.2, 0.8));
        //float a = (PVector.sub(wrist_l, wrist_r).heading() - PI) * 0.05;
        //float a = map((PVector.sub(wrist_l, wrist_r).heading() + TWO_PI) % TWO_PI, -PI, PI, 0.5, -0.5);
-       float a = -PVector.sub(wrist_r, wrist_l).heading() * 0.05;
-       println(a);
+       float a = -PVector.sub(wrist_r, wrist_l).heading();
+       a = map(a, -PI, PI, -1, 1);
+       a = map(pow(a,3), -1, 1, -PI, PI);
+       //println(a);
        feedbackShader.set("feedbackAngle", a);
 
        //TODO: rectangle offset glitches (scale by some velocity?)
