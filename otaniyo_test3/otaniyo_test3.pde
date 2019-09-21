@@ -9,7 +9,7 @@ PGraphics buf1;
 PGraphics buf2;
 
 Kinect kinect;
-HashMap <Integer, SkeletonData> skeletons;
+HashMap <Integer, Skeleton> skeletons;
 
 void setup()
 {
@@ -18,7 +18,7 @@ void setup()
   background(0);
   kinect = new Kinect(this);
   //smooth();
-  skeletons = new HashMap<Integer, SkeletonData>();
+  skeletons = new HashMap<Integer, Skeleton>();
   
   feedbackShader = loadShader("feedback.glsl");
   feedbackShader.set("feedbackAmount", 0.5);
@@ -36,10 +36,6 @@ void setup()
   buf2.endDraw();
 }
 
-Boolean isTracking(SkeletonData s, int pos_idx) {
-  return s.skeletonPositionTrackingState[pos_idx] != Kinect.NUI_SKELETON_POSITION_NOT_TRACKED;
-}
- 
 void draw()
 {
   //background(255, 0, 0);
@@ -65,42 +61,34 @@ void draw()
   image(buf1, 0, 0);
 
   int head_idx = Kinect.NUI_SKELETON_POSITION_HEAD;
-  //if(skeletons.size() > 0) {
-  //  SkeletonData s = skeletons.get(0);
-  //  if(s.skeletonPositionTrackingState[head_idx] != Kinect.NUI_SKELETON_POSITION_NOT_TRACKED)  {
-  //    PVector pos = s.skeletonPositions[head_idx];
-  //    rectMode(RADIUS);
-  //    rect(map(pos.x, 0, 1, 0, width), map(pos.y, 0, 1, 0, height), 50, 50);
-  //  }
-
-  //}
 
   if(skeletons.size() > 0) {
-  for(Map.Entry<Integer, SkeletonData> e: skeletons.entrySet()) {
-    SkeletonData s = e.getValue();
-    if(isTracking(s, head_idx))  {
+  for(Map.Entry<Integer, Skeleton> e: skeletons.entrySet()) {
+    Skeleton s = e.getValue();
+
+    PVector head = s.getHead();
+    if(head != null) {
       //TODO: lowpass filter position
-      PVector pos = s.skeletonPositions[head_idx];
       rectMode(RADIUS);
-      //rect(map(pos.x, 0, 1, 0, width), map(pos.y, 0, 1, 0, height), 50, 50);
-      feedbackShader.set("feedbackCenter", pos.x, 1 - pos.y);
+      //rect(map(head.x, 0, 1, 0, width), map(head.y, 0, 1, 0, height), 50, 50);
+      feedbackShader.set("feedbackCenter", head.x, 1 - head.y);
     }
-    if(isTracking(s, Kinect.NUI_SKELETON_POSITION_WRIST_LEFT) &&
-       isTracking(s, Kinect.NUI_SKELETON_POSITION_WRIST_RIGHT)) {
-       PVector pos_l = s.skeletonPositions[Kinect.NUI_SKELETON_POSITION_WRIST_LEFT];
-       PVector pos_r = s.skeletonPositions[Kinect.NUI_SKELETON_POSITION_WRIST_RIGHT];
 
+    PVector wrist_l = s.getLeftWrist();
+    PVector wrist_r = s.getRightWrist();
+    if(wrist_l != null & wrist_r != null) {
 
-       pos_l.z = 0;
-       pos_r.z = 0;
+       wrist_l.z = 0;
+       wrist_r.z = 0;
 
-       //TODO: scale delta by shoulder width
-       float delta = pos_l.dist(pos_r);
+       //TODO: angle between arms rotate feedback? "inverse" sigmoid function, small effect for almost all values, large effet at bounds. ~x^3?
+       //TODO: scale delta by shoulder width -- what happens when turning around?
+       float delta = wrist_l.dist(wrist_r);
        feedbackShader.set("feedbackScale", map(delta, 0, 1, 1.2, 0.8));
 
-       //TODO: rectangle offset distortion
+       //TODO: rectangle offset distortion (scale by some velocity?)
 
-       println(pos_l, pos_r, delta);
+       println(wrist_l, wrist_r, delta);
        
     }
 
@@ -117,7 +105,7 @@ void appearEvent(SkeletonData s)
   println("appear:", s.dwTrackingID);
   if(s.trackingState == Kinect.NUI_SKELETON_NOT_TRACKED) return;
   synchronized(skeletons) {
-    skeletons.put(s.dwTrackingID, s);
+    skeletons.put(s.dwTrackingID, new Skeleton(s));
     //println(skeletons.get(skeletons.size() - 1).dwTrackingID);
   }
 }
