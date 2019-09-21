@@ -7,6 +7,10 @@ import java.util.Map;
 PShader feedbackShader;
 PGraphics fbbuf1;
 PGraphics fbbuf2;
+
+PShader glitchShader;
+PGraphics glitchbuf1;
+
 PImage mask;
 
 Kinect kinect;
@@ -15,6 +19,7 @@ HashMap <Integer, Skeleton> skeletons;
 void setup()
 {
   //size(640, 480, P2D);
+  //size(960, 540, P2D);
   fullScreen(P2D, 2);
   background(0);
   kinect = new Kinect(this);
@@ -26,17 +31,24 @@ void setup()
   feedbackShader.set("feedbackScale", 0.9);
   feedbackShader.set("feedbackCenter", new PVector(0.5, 0.5));
 
-  mask = loadImage("mask.png");
-
   fbbuf1 = createGraphics(width, height, P2D);
-  fbbuf1.beginDraw();
-  fbbuf1.background(0);
-  fbbuf1.endDraw();
-
   fbbuf2 = createGraphics(width, height, P2D);
-  fbbuf2.beginDraw();
-  fbbuf2.background(0);
-  fbbuf2.endDraw();
+
+  glitchShader = loadShader("glitch.glsl");
+
+  glitchbuf1 = createGraphics(width, height, P2D);
+
+  //mask = loadImage("mask.png");
+
+  // initialize buffers
+  PGraphics[] buffers = { fbbuf1, fbbuf2, glitchbuf1};
+  for(int i = 0; i < buffers.length; i++) {
+    PGraphics buf = buffers[i];
+    buf.beginDraw();
+    buf.background(0);
+    buf.endDraw();
+  }
+
 }
 
 void draw()
@@ -48,13 +60,28 @@ void draw()
   //image(kinect.GetDepth(), 320, 240, 320, 240);
   //image(kinect.GetMask(), 0, 240, 320, 240);
 
-  //mask = kinect.GetMask();
+  mask = kinect.GetMask();
 
-  //image(mask, 0, 0, width, height);
+  glitchbuf1.beginDraw();
+  //println(noise(millis() / 1000.0));
+  if(noise(millis() / 1000.0) < 0.5) {
+    glitchbuf1.clear(); // TODO: randomly skip clear?
+  }
+  glitchbuf1.image(mask, 0, 0, glitchbuf1.width, glitchbuf1.height);
+  glitchbuf1.endDraw();
+
+  for(int i = 0; i < 20; i++) {
+    glitchbuf1.beginDraw();
+    glitchShader.set("rectPosition", random(0, 1), random(0, 1), 0.1 * random(0.5, 2.5), 0.01 * random(0.5, 2.5));
+    glitchShader.set("rectOffset", random(-1, 1) * 0.01, 0);
+    glitchbuf1.shader(glitchShader);
+    glitchbuf1.image(glitchbuf1, 0, 0);
+    glitchbuf1.endDraw();
+  }
 
   fbbuf1.beginDraw();
-  fbbuf1.image(fbbuf2, 0, 0); // apply feedback
-  fbbuf1.image(mask, 0, 0, fbbuf1.width, fbbuf1.height);
+  fbbuf1.image(fbbuf2, 0, 0); // apply feedback from previous frame
+  fbbuf1.image(glitchbuf1, 0, 0);
   fbbuf1.endDraw();
 
 
