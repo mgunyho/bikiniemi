@@ -1,6 +1,8 @@
 import kinect4WinSDK.Kinect;
 import kinect4WinSDK.SkeletonData;
 
+import themidibus.*;
+
 import java.util.Map;
 
 
@@ -15,8 +17,18 @@ PImage mask;
 
 PVector headPrevious;
 
+// knobs[0] == feedback freeze threshold
+// knobs[1] == feedback hue speed
+//TODO: glitch intensity and glitch count knob
+float[] knobs = new float[8];
+
+
+//TODO: glitch normal distribute around body
+
 Kinect kinect;
 HashMap <Integer, Skeleton> skeletons;
+
+MidiBus myBus;
 
 void setup()
 {
@@ -33,6 +45,7 @@ void setup()
   feedbackShader.set("feedbackAmount", 0.5);
   feedbackShader.set("feedbackScale", 0.9);
   feedbackShader.set("feedbackCenter", new PVector(0.5, 0.5));
+  feedbackShader.set("feedbackHueSpeed", 0.1);
 
   fbbuf1 = createGraphics(width, height, P2D);
   fbbuf2 = createGraphics(width, height, P2D);
@@ -54,6 +67,12 @@ void setup()
 
   headPrevious = new PVector(0.5,0.5,0);
 
+  knobs[0] = 0.5;
+
+  // MIDI
+
+  String midi_name = "MPK mini";
+  myBus = new MidiBus(this, midi_name, midi_name);
 }
 
 void draw()
@@ -67,13 +86,14 @@ void draw()
 
   mask = kinect.GetMask();
 
+  println(knobs);
+
   if(skeletons.size() > 0) {
     for(Map.Entry<Integer, Skeleton> e: skeletons.entrySet()) {
       Skeleton s = e.getValue();
 
       PVector head = s.getHead();
       if(head != null) {
-        //TODO: lowpass filter position
         rectMode(RADIUS);
         //rect(map(head.x, 0, 1, 0, width), map(head.y, 0, 1, 0, height), 50, 50);
 
@@ -96,8 +116,7 @@ void draw()
         wrist_l.z = 0;
         wrist_r.z = 0;
 
-        //TODO: angle between arms rotate feedback? "inverse" sigmoid function, small effect for almost all values, large effet at bounds. ~x^3? tan?
-        //TODO: scale delta by shoulder width -- what happens when turning around?
+        //TODO: scale delta by shoulder width -- what happens when player is sideways?
         float delta = wrist_l.dist(wrist_r);
         feedbackShader.set("feedbackScale", map(delta, 0, 1, 1.2, 0.8));
         //float a = (PVector.sub(wrist_l, wrist_r).heading() - PI) * 0.05;
@@ -108,7 +127,7 @@ void draw()
         //println(a);
         feedbackShader.set("feedbackAngle", a);
 
-        //TODO: rectangle offset glitches (scale by some velocity?)
+        //TODO: scale glitches based on some velocity?
 
         //println(wrist_l, wrist_r, delta);
 
@@ -121,9 +140,11 @@ void draw()
     feedbackShader.set("feedbackCenter", 0.5, 0.5);
   }
 
+  feedbackShader.set("feedbackHueSpeed", knobs[1] * 0.1);
+
   glitchbuf1.beginDraw();
   //println(noise(millis() / 1000.0));
-  if(noise(millis() / 1000.0) < 0.5) {
+  if(noise(millis() / 1000.0) < knobs[0] * 0.7) {
     glitchbuf1.clear(); // TODO: randomly skip clear?
   }
   glitchbuf1.image(mask, 0, 0, glitchbuf1.width, glitchbuf1.height);
@@ -203,5 +224,19 @@ void moveEvent(SkeletonData _b, SkeletonData _a)
     //}
     //if(b.trackingID == )
   return;
+  }
+}
+
+
+
+//////////////////////
+/// MIDI CALLBACKS ///
+//////////////////////
+
+void controllerChange(int channel, int number, int value) {
+  //println("controllerChange:", channel, number, value);
+  float normV = map(value, 0, 127, 0.f, 1.f);
+  if(1 <= number && number <= 8) {
+    knobs[number - 1] =  normV;
   }
 }
