@@ -76,19 +76,24 @@ void draw()
 
     PVector wrist_l = s.getLeftWrist();
     PVector wrist_r = s.getRightWrist();
-    if(wrist_l != null & wrist_r != null) {
+    if(wrist_l != null && wrist_r != null) {
 
        wrist_l.z = 0;
        wrist_r.z = 0;
 
-       //TODO: angle between arms rotate feedback? "inverse" sigmoid function, small effect for almost all values, large effet at bounds. ~x^3?
+       //TODO: angle between arms rotate feedback? "inverse" sigmoid function, small effect for almost all values, large effet at bounds. ~x^3? tan?
        //TODO: scale delta by shoulder width -- what happens when turning around?
        float delta = wrist_l.dist(wrist_r);
        feedbackShader.set("feedbackScale", map(delta, 0, 1, 1.2, 0.8));
+       //float a = (PVector.sub(wrist_l, wrist_r).heading() - PI) * 0.05;
+       //float a = map((PVector.sub(wrist_l, wrist_r).heading() + TWO_PI) % TWO_PI, -PI, PI, 0.5, -0.5);
+       float a = -PVector.sub(wrist_r, wrist_l).heading() * 0.05;
+       println(a);
+       feedbackShader.set("feedbackAngle", a);
 
-       //TODO: rectangle offset distortion (scale by some velocity?)
+       //TODO: rectangle offset glitches (scale by some velocity?)
 
-       println(wrist_l, wrist_r, delta);
+       //println(wrist_l, wrist_r, delta);
        
     }
 

@@ -6,6 +6,7 @@ precisioun mediump int;
 uniform float feedbackAmount;
 uniform float feedbackScale;
 uniform vec2 feedbackCenter;
+uniform float feedbackAngle;
 
 uniform sampler2D texture;
 varying vec4 vertTexCoord;
@@ -30,10 +31,17 @@ vec3 hsv2rgb(vec3 c)
     vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
     return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
+
+mat2 rotationMatrix(float angle) {
+	float t = angle;
+	return mat2(cos(t), -sin(t),
+	            sin(t),  cos(t));
+}
+
 void main() {
-	//vec2 center = vec2(0.5, 0.5);
+	vec2 center = vec2(0.5, 0.5);
 	//vec2 xy = vertTexCoord.st - center;
-	vec2 xy = vertTexCoord.st - feedbackCenter;
+	vec2 xy = rotationMatrix(feedbackAngle) * (vertTexCoord.st - feedbackCenter);
 
 	vec4 color = texture2D(texture, xy * feedbackScale + feedbackCenter) * feedbackAmount * vertColor;
 	color += texture2D(texture, vertTexCoord.st) * (1 - feedbackAmount) * vertColor;
