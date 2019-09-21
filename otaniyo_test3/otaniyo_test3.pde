@@ -8,13 +8,15 @@ PShader feedbackShader;
 PGraphics buf1;
 PGraphics buf2;
 
+PVector headPrevious;
+
 Kinect kinect;
 HashMap <Integer, Skeleton> skeletons;
 
 void setup()
 {
-  //size(640, 480, P2D);
-  fullScreen(P2D, 2);
+  size(640, 480, P2D);
+  //fullScreen(P2D, 2);
   background(0);
   kinect = new Kinect(this);
   //smooth();
@@ -24,6 +26,8 @@ void setup()
   feedbackShader.set("feedbackAmount", 0.5);
   feedbackShader.set("feedbackScale", 0.9);
   feedbackShader.set("feedbackCenter", new PVector(0.5, 0.5));
+
+  headPrevious = new PVector(0.5,0.5,0);
 
   buf1 = createGraphics(width, height, P2D);
   buf1.beginDraw();
@@ -71,7 +75,17 @@ void draw()
       //TODO: lowpass filter position
       rectMode(RADIUS);
       //rect(map(head.x, 0, 1, 0, width), map(head.y, 0, 1, 0, height), 50, 50);
-      feedbackShader.set("feedbackCenter", head.x, 1 - head.y);
+      
+      float mpl = 0.07;
+      
+      float avgX = (mpl*head.x + (1-mpl)*headPrevious.x);
+      float avgY = (mpl*head.y + (1-mpl)*headPrevious.y);
+      
+      println(avgX + " " + avgY + " " + head.x + "  " + head.y);
+      
+      feedbackShader.set("feedbackCenter", avgX, 1 - avgY);
+      headPrevious.x = avgX;
+      headPrevious.y = avgY;
     }
 
     PVector wrist_l = s.getLeftWrist();
