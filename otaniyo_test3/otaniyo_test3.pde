@@ -67,36 +67,6 @@ void draw()
 
   mask = kinect.GetMask();
 
-  glitchbuf1.beginDraw();
-  //println(noise(millis() / 1000.0));
-  if(noise(millis() / 1000.0) < 0.5) {
-    glitchbuf1.clear(); // TODO: randomly skip clear?
-  }
-  glitchbuf1.image(mask, 0, 0, glitchbuf1.width, glitchbuf1.height);
-  glitchbuf1.endDraw();
-
-  for(int i = 0; i < 20; i++) {
-    glitchbuf1.beginDraw();
-    glitchShader.set("rectPosition", random(0, 1), random(0, 1), 0.1 * random(0.5, 2.5), 0.01 * random(0.5, 2.5));
-    glitchShader.set("rectOffset", random(-1, 1) * 0.01, 0);
-    glitchbuf1.shader(glitchShader);
-    glitchbuf1.image(glitchbuf1, 0, 0);
-    glitchbuf1.endDraw();
-  }
-
-  fbbuf1.beginDraw();
-  fbbuf1.image(fbbuf2, 0, 0); // apply feedback from previous frame
-  fbbuf1.image(glitchbuf1, 0, 0);
-  fbbuf1.endDraw();
-
-
-  fbbuf2.beginDraw();
-  fbbuf2.shader(feedbackShader);
-  fbbuf2.image(fbbuf1, 0, 0);
-  fbbuf2.endDraw();
-
-  image(fbbuf1, 0, 0);
-
   if(skeletons.size() > 0) {
   for(Map.Entry<Integer, Skeleton> e: skeletons.entrySet()) {
     Skeleton s = e.getValue();
@@ -112,7 +82,7 @@ void draw()
       float avgX = (mpl*head.x + (1-mpl)*headPrevious.x);
       float avgY = (mpl*head.y + (1-mpl)*headPrevious.y);
       
-      println(avgX + " " + avgY + " " + head.x + "  " + head.y);
+      //println(avgX + " " + avgY + " " + head.x + "  " + head.y);
       
       feedbackShader.set("feedbackCenter", avgX, 1 - avgY);
       headPrevious.x = avgX;
@@ -150,6 +120,37 @@ void draw()
     //feedbackCenter(0.5, 0.5);
     feedbackShader.set("feedbackCenter", 0.5, 0.5);
   }
+
+  glitchbuf1.beginDraw();
+  //println(noise(millis() / 1000.0));
+  if(noise(millis() / 1000.0) < 0.5) {
+    glitchbuf1.clear(); // TODO: randomly skip clear?
+  }
+  glitchbuf1.image(mask, 0, 0, glitchbuf1.width, glitchbuf1.height);
+  glitchbuf1.endDraw();
+
+  for(int i = 0; i < 20; i++) {
+    glitchbuf1.beginDraw();
+    glitchShader.set("rectPosition", random(0, 1), random(0, 1), 0.1 * random(0.5, 2.5), 0.01 * random(0.5, 2.5));
+    glitchShader.set("rectOffset", random(-1, 1) * 0.01, 0);
+    glitchbuf1.shader(glitchShader);
+    glitchbuf1.image(glitchbuf1, 0, 0);
+    glitchbuf1.endDraw();
+  }
+
+  fbbuf1.beginDraw();
+  fbbuf1.image(fbbuf2, 0, 0); // apply feedback from previous frame
+  fbbuf1.image(glitchbuf1, 0, 0);
+  fbbuf1.endDraw();
+
+
+  fbbuf2.beginDraw();
+  fbbuf2.shader(feedbackShader);
+  fbbuf2.image(fbbuf1, 0, 0);
+  fbbuf2.endDraw();
+
+  image(fbbuf1, 0, 0);
+
 }
 
 void mouseClicked() {
