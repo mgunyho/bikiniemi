@@ -21,6 +21,10 @@ class Skeleton {
   }
 
   public PVector getHead() { return getBodyPartByIndex(Kinect.NUI_SKELETON_POSITION_HEAD); }
+
+  public PVector getLeftShoulder() { return getBodyPartByIndex(Kinect.NUI_SKELETON_POSITION_SHOULDER_LEFT); }
+  public PVector getRightShoulder() { return getBodyPartByIndex(Kinect.NUI_SKELETON_POSITION_SHOULDER_RIGHT); }
+
   public PVector getLeftWrist()  { return getBodyPartByIndex(Kinect.NUI_SKELETON_POSITION_WRIST_LEFT); }
   public PVector getRightWrist() { return getBodyPartByIndex(Kinect.NUI_SKELETON_POSITION_WRIST_RIGHT); }
 }

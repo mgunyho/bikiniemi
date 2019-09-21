@@ -19,6 +19,7 @@ PVector headPrevious;
 
 // knobs[0] == feedback freeze threshold
 // knobs[1] == feedback hue speed
+// knobs[4] == glitch color spread
 //TODO: glitch intensity and glitch count knob
 float[] knobs = new float[8];
 
@@ -33,8 +34,8 @@ MidiBus myBus;
 void setup()
 {
   //size(640, 480, P2D);
-  size(960, 540, P2D);
-  //fullScreen(P2D, 2);
+  //size(960, 540, P2D);
+  fullScreen(P2D, 2);
 
   background(0);
   kinect = new Kinect(this);
@@ -86,7 +87,7 @@ void draw()
 
   mask = kinect.GetMask();
 
-  println(knobs);
+  //println(knobs);
 
   if(skeletons.size() > 0) {
     for(Map.Entry<Integer, Skeleton> e: skeletons.entrySet()) {
@@ -111,13 +112,19 @@ void draw()
 
       PVector wrist_l = s.getLeftWrist();
       PVector wrist_r = s.getRightWrist();
-      if(wrist_l != null && wrist_r != null) {
+      PVector shldr_l = s.getLeftShoulder();
+      PVector shldr_r = s.getRightShoulder();
+
+      if(wrist_l != null && wrist_r != null && shldr_l != null && shldr_r != null) {
 
         wrist_l.z = 0;
         wrist_r.z = 0;
 
-        //TODO: scale delta by shoulder width -- what happens when player is sideways?
-        float delta = wrist_l.dist(wrist_r);
+        shldr_l.z = 0;
+        shldr_r.z = 0;
+
+        float delta = wrist_l.dist(wrist_r) / (shldr_l.dist(shldr_r) / 0.2f);
+        //println(delta, shldr_l.dist(shldr_r));
         feedbackShader.set("feedbackScale", map(delta, 0, 1, 1.2, 0.8));
         //float a = (PVector.sub(wrist_l, wrist_r).heading() - PI) * 0.05;
         //float a = map((PVector.sub(wrist_l, wrist_r).heading() + TWO_PI) % TWO_PI, -PI, PI, 0.5, -0.5);
@@ -150,11 +157,13 @@ void draw()
   glitchbuf1.image(mask, 0, 0, glitchbuf1.width, glitchbuf1.height);
   glitchbuf1.endDraw();
 
+  //randomSeed(42);
   for(int i = 0; i < 20; i++) {
     glitchbuf1.beginDraw();
     glitchShader.set("rectPosition", random(0, 1), random(0, 1), 0.1 * random(0.5, 2.5), 0.01 * random(0.5, 2.5));
     glitchShader.set("rectOffset", random(-1, 1) * 0.01, 0);
     glitchShader.set("mask", mask);
+    glitchShader.set("colorSpreadX", random(-1, 1) * knobs[4] * 0.1);
     glitchbuf1.shader(glitchShader);
     glitchbuf1.image(glitchbuf1, 0, 0);
     glitchbuf1.endDraw();
