@@ -5,8 +5,9 @@ import java.util.Map;
 
 
 PShader feedbackShader;
-PGraphics buf1;
-PGraphics buf2;
+PGraphics fbbuf1;
+PGraphics fbbuf2;
+PImage mask;
 
 Kinect kinect;
 HashMap <Integer, Skeleton> skeletons;
@@ -25,42 +26,44 @@ void setup()
   feedbackShader.set("feedbackScale", 0.9);
   feedbackShader.set("feedbackCenter", new PVector(0.5, 0.5));
 
-  buf1 = createGraphics(width, height, P2D);
-  buf1.beginDraw();
-  buf1.background(0);
-  buf1.endDraw();
+  mask = loadImage("mask.png");
 
-  buf2 = createGraphics(width, height, P2D);
-  buf2.beginDraw();
-  buf2.background(0);
-  buf2.endDraw();
+  fbbuf1 = createGraphics(width, height, P2D);
+  fbbuf1.beginDraw();
+  fbbuf1.background(0);
+  fbbuf1.endDraw();
+
+  fbbuf2 = createGraphics(width, height, P2D);
+  fbbuf2.beginDraw();
+  fbbuf2.background(0);
+  fbbuf2.endDraw();
 }
 
 void draw()
 {
   //background(255, 0, 0);
   background(0);
+
   //image(kinect.GetImage(), 320, 0, 320, 240);
   //image(kinect.GetDepth(), 320, 240, 320, 240);
   //image(kinect.GetMask(), 0, 240, 320, 240);
 
-  PImage mask = kinect.GetMask();
+  //mask = kinect.GetMask();
+
   //image(mask, 0, 0, width, height);
 
-  buf1.beginDraw();
-  buf1.image(buf2, 0, 0); // apply feedback
-  buf1.image(mask, 0, 0, buf1.width, buf1.height);
-  buf1.endDraw();
+  fbbuf1.beginDraw();
+  fbbuf1.image(fbbuf2, 0, 0); // apply feedback
+  fbbuf1.image(mask, 0, 0, fbbuf1.width, fbbuf1.height);
+  fbbuf1.endDraw();
 
 
-  buf2.beginDraw();
-  buf2.shader(feedbackShader);
-  buf2.image(buf1, 0, 0);
-  buf2.endDraw();
+  fbbuf2.beginDraw();
+  fbbuf2.shader(feedbackShader);
+  fbbuf2.image(fbbuf1, 0, 0);
+  fbbuf2.endDraw();
 
-  image(buf1, 0, 0);
-
-  int head_idx = Kinect.NUI_SKELETON_POSITION_HEAD;
+  image(fbbuf1, 0, 0);
 
   if(skeletons.size() > 0) {
   for(Map.Entry<Integer, Skeleton> e: skeletons.entrySet()) {
@@ -88,7 +91,7 @@ void draw()
        //float a = (PVector.sub(wrist_l, wrist_r).heading() - PI) * 0.05;
        //float a = map((PVector.sub(wrist_l, wrist_r).heading() + TWO_PI) % TWO_PI, -PI, PI, 0.5, -0.5);
        float a = -PVector.sub(wrist_r, wrist_l).heading() * 0.05;
-       println(a);
+       //println(a);
        feedbackShader.set("feedbackAngle", a);
 
        //TODO: rectangle offset glitches (scale by some velocity?)
@@ -103,6 +106,11 @@ void draw()
     //feedbackCenter(0.5, 0.5);
     feedbackShader.set("feedbackCenter", 0.5, 0.5);
   }
+}
+
+void mouseClicked() {
+  //println("foo");
+  mask.save("mask.png");
 }
 
 void appearEvent(SkeletonData s) 
