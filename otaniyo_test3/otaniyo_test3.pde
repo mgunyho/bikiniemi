@@ -13,14 +13,17 @@ PGraphics glitchbuf1;
 
 PImage mask;
 
+PVector headPrevious;
+
 Kinect kinect;
 HashMap <Integer, Skeleton> skeletons;
 
 void setup()
 {
   //size(640, 480, P2D);
-  //size(960, 540, P2D);
-  fullScreen(P2D, 2);
+  size(960, 540, P2D);
+  //fullScreen(P2D, 2);
+
   background(0);
   kinect = new Kinect(this);
   //smooth();
@@ -48,6 +51,8 @@ void setup()
     buf.background(0);
     buf.endDraw();
   }
+
+  headPrevious = new PVector(0.5,0.5,0);
 
 }
 
@@ -101,7 +106,17 @@ void draw()
       //TODO: lowpass filter position
       rectMode(RADIUS);
       //rect(map(head.x, 0, 1, 0, width), map(head.y, 0, 1, 0, height), 50, 50);
-      feedbackShader.set("feedbackCenter", head.x, 1 - head.y);
+      
+      float mpl = 0.07;
+      
+      float avgX = (mpl*head.x + (1-mpl)*headPrevious.x);
+      float avgY = (mpl*head.y + (1-mpl)*headPrevious.y);
+      
+      println(avgX + " " + avgY + " " + head.x + "  " + head.y);
+      
+      feedbackShader.set("feedbackCenter", avgX, 1 - avgY);
+      headPrevious.x = avgX;
+      headPrevious.y = avgY;
     }
 
     PVector wrist_l = s.getLeftWrist();
@@ -117,7 +132,9 @@ void draw()
        feedbackShader.set("feedbackScale", map(delta, 0, 1, 1.2, 0.8));
        //float a = (PVector.sub(wrist_l, wrist_r).heading() - PI) * 0.05;
        //float a = map((PVector.sub(wrist_l, wrist_r).heading() + TWO_PI) % TWO_PI, -PI, PI, 0.5, -0.5);
-       float a = -PVector.sub(wrist_r, wrist_l).heading() * 0.05;
+       float a = -PVector.sub(wrist_r, wrist_l).heading();
+       a = map(a, -PI, PI, -1, 1);
+       a = map(pow(a,3), -1, 1, -PI, PI);
        //println(a);
        feedbackShader.set("feedbackAngle", a);
 
