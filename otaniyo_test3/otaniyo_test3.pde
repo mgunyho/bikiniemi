@@ -19,10 +19,17 @@ PVector headPrevious;
 
 // knobs[0] == feedback freeze threshold
 // knobs[1] == feedback hue speed
+// knobs[2] == feedback brightness boost
 // knobs[4] == glitch color spread
-// knobs[5] == glitch mask enable
+// knobs[5] == glitch x spread
 // knobs[6] == glitch count
+// knobs[7] == glitch brightness boost
 float[] knobs = new float[8];
+
+boolean[] buttons = new boolean[8];
+
+// toggles[0] == show mask
+boolean[] toggles = new boolean[8];
 
 //PVector[] bodyRectangle = new PVector[4];
 //PVector[] bodyBounds = {
@@ -75,6 +82,8 @@ void setup()
   headPrevious = new PVector(0.5,0.5,0);
 
   knobs[0] = 0.5;
+  knobs[5] = 0.5;
+  knobs[6] = 0.5;
 
   //for(int i = 0; i < bodyRectangle.length; i++) {
   //  bodyRectangle[i] = new PVector(0.5, 0.5);
@@ -89,7 +98,7 @@ void setup()
 void draw()
 {
   //background(255, 0, 0);
-  background(0);
+  background(200);
 
   //image(kinect.GetImage(), 320, 0, 320, 240);
   //image(kinect.GetDepth(), 320, 240, 320, 240);
@@ -143,6 +152,7 @@ void draw()
         a = map(pow(a,3), -1, 1, -PI, PI);
         //println(a);
         feedbackShader.set("feedbackAngle", a);
+        feedbackShader.set("feedbackBrightnessAdd", knobs[2] * 0.1);
 
         //TODO: scale glitches based on some velocity?
 
@@ -187,7 +197,7 @@ void draw()
   if(noise(millis() / 1000.0) < knobs[0] * 0.7) {
     glitchbuf1.clear();
   }
-  if(knobs[5] > 0.5) {
+  if(/*knobs[5] > 0.5 */ toggles[0]) {
     glitchbuf1.image(mask, 0, 0, glitchbuf1.width, glitchbuf1.height);
 
   }
@@ -199,6 +209,9 @@ void draw()
   float glitchy1 = bodyCenter.y - bodyDims.y * 0.5 * 3 - 0.1;
   float glitchy2 = bodyCenter.y + bodyDims.y * 0.5 * 3;
   float maxGlitches = 30;
+
+  glitchShader.set("mask", mask);
+  glitchShader.set("brightnessAdd", /*knobs[7]*/ toggles[1] ? 1.0 : 0);
   for(int i = 0; i < knobs[6] * maxGlitches; i++) {
     glitchbuf1.beginDraw();
     //glitchShader.set("rectPosition", random(0, 1), random(0, 1), 0.1 * random(0.5, 2.5), 0.01 * random(0.5, 2.5));
@@ -208,7 +221,6 @@ void draw()
                                      glitchw,
                                      0.01 * random(0.5, 2.5));
     glitchShader.set("rectOffset", random(-1, 1) * 0.01, 0);
-    glitchShader.set("mask", mask);
     glitchShader.set("colorSpreadX", random(-1, 1) * knobs[4] * 0.1);
     glitchbuf1.shader(glitchShader);
     glitchbuf1.image(glitchbuf1, 0, 0);
@@ -256,7 +268,7 @@ void draw()
 
 void mouseClicked() {
   //println("foo");
-  mask.save("mask.png");
+  save("bikiniemi_"+ millis() +".png");
 }
 
 void appearEvent(SkeletonData s) 
@@ -318,5 +330,20 @@ void controllerChange(int channel, int number, int value) {
   float normV = map(value, 0, 127, 0.f, 1.f);
   if(1 <= number && number <= 8) {
     knobs[number - 1] =  normV;
+  }
+}
+
+void noteOn(int channel, int pitch, int velocity) {
+  int pad_idx = pitch - 44;
+  if(0 <= pad_idx && pad_idx < 8) {
+      buttons[pad_idx] = true;
+      toggles[pad_idx] = !toggles[pad_idx];
+  }
+}
+
+void noteOff(int channel, int pitch, int velocity) {
+  int pad_idx = pitch - 44;
+  if(0 <= pad_idx && pad_idx < 8) {
+      buttons[pad_idx] = false;
   }
 }

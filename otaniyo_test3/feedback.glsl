@@ -8,6 +8,8 @@ uniform float feedbackScale;
 uniform vec2 feedbackCenter;
 uniform float feedbackAngle;
 uniform float feedbackHueSpeed;
+uniform float feedbackBrightnessAdd;
+
 
 uniform sampler2D texture;
 varying vec4 vertTexCoord;
@@ -47,7 +49,7 @@ void main() {
 	vec4 color = texture2D(texture, xy * feedbackScale + feedbackCenter) * feedbackAmount * vertColor;
 	color += texture2D(texture, vertTexCoord.st) * (1 - feedbackAmount) * vertColor;
 
-	color.rgb = hsv2rgb(rgb2hsv(color.rgb) + vec3(feedbackHueSpeed, 0, 0));
+	color.rgb = hsv2rgb(rgb2hsv(color.rgb) + vec3(feedbackHueSpeed, 0, feedbackBrightnessAdd));
 
 	gl_FragColor = color;
 }
