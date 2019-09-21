@@ -27,4 +27,8 @@ class Skeleton {
 
   public PVector getLeftWrist()  { return getBodyPartByIndex(Kinect.NUI_SKELETON_POSITION_WRIST_LEFT); }
   public PVector getRightWrist() { return getBodyPartByIndex(Kinect.NUI_SKELETON_POSITION_WRIST_RIGHT); }
+  
+  public PVector getLeftHip() { return getBodyPartByIndex(Kinect.NUI_SKELETON_POSITION_HIP_LEFT); }
+  public PVector getRightHip() { return getBodyPartByIndex(Kinect.NUI_SKELETON_POSITION_HIP_RIGHT); }
+
 }

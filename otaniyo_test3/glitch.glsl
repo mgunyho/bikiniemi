@@ -28,6 +28,7 @@ void main() {
                      texture2D(mask, pos + vec2( colorSpreadX, 0)).g,
                      texture2D(mask, pos - vec2(-colorSpreadX, 0)).b,
                      texture2D(mask, pos).a);
+        //color = vec4(1, 1, 1, 1);
     }
 
     gl_FragColor = color;

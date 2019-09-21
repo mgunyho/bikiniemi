@@ -20,11 +20,17 @@ PVector headPrevious;
 // knobs[0] == feedback freeze threshold
 // knobs[1] == feedback hue speed
 // knobs[4] == glitch color spread
-//TODO: glitch intensity and glitch count knob
+// knobs[5] == glitch mask enable
+// knobs[6] == glitch count
 float[] knobs = new float[8];
 
-
-//TODO: glitch normal distribute around body
+//PVector[] bodyRectangle = new PVector[4];
+//PVector[] bodyBounds = {
+//  new PVector(0.5, 0.5), // body x boundary
+//  new PVector(0.5, 0.5)  // body y boundary
+//};
+PVector bodyCenter = new PVector(0.5, 0.5);
+PVector bodyDims = new PVector(0.5, 0.5);
 
 Kinect kinect;
 HashMap <Integer, Skeleton> skeletons;
@@ -69,6 +75,10 @@ void setup()
   headPrevious = new PVector(0.5,0.5,0);
 
   knobs[0] = 0.5;
+
+  //for(int i = 0; i < bodyRectangle.length; i++) {
+  //  bodyRectangle[i] = new PVector(0.5, 0.5);
+  //}
 
   // MIDI
 
@@ -139,6 +149,29 @@ void draw()
         //println(wrist_l, wrist_r, delta);
 
       }
+      
+      PVector hip_l = s.getLeftHip();
+      PVector hip_r = s.getRightHip();
+      if(hip_l != null && hip_r != null && shldr_l != null && shldr_r != null) {
+        //bodyRectangle[0] = shldr_l;
+        //bodyRectangle[1] = shldr_r;
+        //bodyRectangle[2] = hip_r;
+        //bodyRectangle[3] = hip_l;
+        //bodyBounds[0] = new PVector((shldr_l.x + hip_l.x) * 0.5,
+        //                            (shldr_r.x + hip_r.x) * 0.5);
+        //bodyBounds[1] = new PVector((shldr_l.y + shldr_r.y) * 0.5,
+        //                            (hip_l.y + hip_r.y) * 0.5);
+        bodyCenter = new PVector(0, 0);
+        bodyCenter.add(shldr_l);
+        bodyCenter.add(shldr_r);
+        bodyCenter.add(hip_l);
+        bodyCenter.add(hip_r);
+        bodyCenter.mult(0.25);
+        bodyDims = new PVector(
+          0.5 * abs(shldr_r.x + hip_r.x - shldr_l.x - hip_l.x),
+          0.5 * abs(shldr_r.y + shldr_l.y - hip_r.y - hip_l.y)
+        );
+      }
 
       break;
     }
@@ -152,15 +185,28 @@ void draw()
   glitchbuf1.beginDraw();
   //println(noise(millis() / 1000.0));
   if(noise(millis() / 1000.0) < knobs[0] * 0.7) {
-    glitchbuf1.clear(); // TODO: randomly skip clear?
+    glitchbuf1.clear();
   }
-  glitchbuf1.image(mask, 0, 0, glitchbuf1.width, glitchbuf1.height);
+  if(knobs[5] > 0.5) {
+    glitchbuf1.image(mask, 0, 0, glitchbuf1.width, glitchbuf1.height);
+
+  }
   glitchbuf1.endDraw();
 
   //randomSeed(42);
-  for(int i = 0; i < 20; i++) {
+  float glitchx1 = bodyCenter.x - bodyDims.x * 0.5 * 2;
+  float glitchx2 = bodyCenter.x + bodyDims.x * 0.5 * 2;
+  float glitchy1 = bodyCenter.y - bodyDims.y * 0.5 * 3 - 0.1;
+  float glitchy2 = bodyCenter.y + bodyDims.y * 0.5 * 3;
+  float maxGlitches = 30;
+  for(int i = 0; i < knobs[6] * maxGlitches; i++) {
     glitchbuf1.beginDraw();
-    glitchShader.set("rectPosition", random(0, 1), random(0, 1), 0.1 * random(0.5, 2.5), 0.01 * random(0.5, 2.5));
+    //glitchShader.set("rectPosition", random(0, 1), random(0, 1), 0.1 * random(0.5, 2.5), 0.01 * random(0.5, 2.5));
+    float glitchw = 0.1 * random(0.5, 2.5);
+    glitchShader.set("rectPosition", random(glitchx1, glitchx2) - 0.5 * glitchw,
+                                     random(1 - glitchy2, 1 - glitchy1) - 0.05,
+                                     glitchw,
+                                     0.01 * random(0.5, 2.5));
     glitchShader.set("rectOffset", random(-1, 1) * 0.01, 0);
     glitchShader.set("mask", mask);
     glitchShader.set("colorSpreadX", random(-1, 1) * knobs[4] * 0.1);
@@ -181,6 +227,30 @@ void draw()
   fbbuf2.endDraw();
 
   image(fbbuf1, 0, 0);
+
+
+  //PVector bodyRectangleCenter = new PVector(0, 0);
+  //PVector bodyRectangleDimensions = new PVector(
+  //  abs(bodyRectangle[0].x + bodyRectangle[3].x - (bodyRectangle[1].x + bodyRectangle[2].x)) * 0.5f,
+  //  abs(bodyRectangle[0].y + bodyRectangle[1].y - (bodyRectangle[2].y + bodyRectangle[3].y)) * 0.5f
+  //);
+  //for(int i = 0; i < 4; i++) {
+  //  bodyRectangleCenter.add(bodyRectangle[i]);
+  //}
+  //bodyRectangleCenter.mult(0.25f);
+
+  pushStyle();
+  //rectMode(RADIUS);
+  //rect(bodyRectangleCenter.x * width, bodyRectangleCenter.y * height,
+  //     bodyRectangleDimensions.x * width, bodyRectangleDimensions.y * height);
+  //rectMode(CORNERS);
+  //rect(bodyBounds[0].x * width, (bodyBounds[1].x + 0.2) * height,
+  //     bodyBounds[0].y * width, (bodyBounds[1].y + 0.2) * height);
+  //rectMode(CENTER);
+  //rect(bodyCenter.x * width, (bodyCenter.y + 0.0) * height,
+  //     bodyDims.x * width * 2, bodyDims.y * height * 3);
+  //println(bodyCenter, bodyDims);
+  popStyle();
 
 }
 
