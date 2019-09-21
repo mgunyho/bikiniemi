@@ -154,6 +154,7 @@ void draw()
     glitchbuf1.beginDraw();
     glitchShader.set("rectPosition", random(0, 1), random(0, 1), 0.1 * random(0.5, 2.5), 0.01 * random(0.5, 2.5));
     glitchShader.set("rectOffset", random(-1, 1) * 0.01, 0);
+    glitchShader.set("mask", mask);
     glitchbuf1.shader(glitchShader);
     glitchbuf1.image(glitchbuf1, 0, 0);
     glitchbuf1.endDraw();
