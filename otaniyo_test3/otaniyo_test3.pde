@@ -68,54 +68,54 @@ void draw()
   mask = kinect.GetMask();
 
   if(skeletons.size() > 0) {
-  for(Map.Entry<Integer, Skeleton> e: skeletons.entrySet()) {
-    Skeleton s = e.getValue();
+    for(Map.Entry<Integer, Skeleton> e: skeletons.entrySet()) {
+      Skeleton s = e.getValue();
 
-    PVector head = s.getHead();
-    if(head != null) {
-      //TODO: lowpass filter position
-      rectMode(RADIUS);
-      //rect(map(head.x, 0, 1, 0, width), map(head.y, 0, 1, 0, height), 50, 50);
-      
-      float mpl = 0.07;
-      
-      float avgX = (mpl*head.x + (1-mpl)*headPrevious.x);
-      float avgY = (mpl*head.y + (1-mpl)*headPrevious.y);
-      
-      //println(avgX + " " + avgY + " " + head.x + "  " + head.y);
-      
-      feedbackShader.set("feedbackCenter", avgX, 1 - avgY);
-      headPrevious.x = avgX;
-      headPrevious.y = avgY;
+      PVector head = s.getHead();
+      if(head != null) {
+        //TODO: lowpass filter position
+        rectMode(RADIUS);
+        //rect(map(head.x, 0, 1, 0, width), map(head.y, 0, 1, 0, height), 50, 50);
+
+        float mpl = 0.07;
+
+        float avgX = (mpl*head.x + (1-mpl)*headPrevious.x);
+        float avgY = (mpl*head.y + (1-mpl)*headPrevious.y);
+
+        //println(avgX + " " + avgY + " " + head.x + "  " + head.y);
+
+        feedbackShader.set("feedbackCenter", avgX, 1 - avgY);
+        headPrevious.x = avgX;
+        headPrevious.y = avgY;
+      }
+
+      PVector wrist_l = s.getLeftWrist();
+      PVector wrist_r = s.getRightWrist();
+      if(wrist_l != null && wrist_r != null) {
+
+        wrist_l.z = 0;
+        wrist_r.z = 0;
+
+        //TODO: angle between arms rotate feedback? "inverse" sigmoid function, small effect for almost all values, large effet at bounds. ~x^3? tan?
+        //TODO: scale delta by shoulder width -- what happens when turning around?
+        float delta = wrist_l.dist(wrist_r);
+        feedbackShader.set("feedbackScale", map(delta, 0, 1, 1.2, 0.8));
+        //float a = (PVector.sub(wrist_l, wrist_r).heading() - PI) * 0.05;
+        //float a = map((PVector.sub(wrist_l, wrist_r).heading() + TWO_PI) % TWO_PI, -PI, PI, 0.5, -0.5);
+        float a = -PVector.sub(wrist_r, wrist_l).heading();
+        a = map(a, -PI, PI, -1, 1);
+        a = map(pow(a,3), -1, 1, -PI, PI);
+        //println(a);
+        feedbackShader.set("feedbackAngle", a);
+
+        //TODO: rectangle offset glitches (scale by some velocity?)
+
+        //println(wrist_l, wrist_r, delta);
+
+      }
+
+      break;
     }
-
-    PVector wrist_l = s.getLeftWrist();
-    PVector wrist_r = s.getRightWrist();
-    if(wrist_l != null && wrist_r != null) {
-
-       wrist_l.z = 0;
-       wrist_r.z = 0;
-
-       //TODO: angle between arms rotate feedback? "inverse" sigmoid function, small effect for almost all values, large effet at bounds. ~x^3? tan?
-       //TODO: scale delta by shoulder width -- what happens when turning around?
-       float delta = wrist_l.dist(wrist_r);
-       feedbackShader.set("feedbackScale", map(delta, 0, 1, 1.2, 0.8));
-       //float a = (PVector.sub(wrist_l, wrist_r).heading() - PI) * 0.05;
-       //float a = map((PVector.sub(wrist_l, wrist_r).heading() + TWO_PI) % TWO_PI, -PI, PI, 0.5, -0.5);
-       float a = -PVector.sub(wrist_r, wrist_l).heading();
-       a = map(a, -PI, PI, -1, 1);
-       a = map(pow(a,3), -1, 1, -PI, PI);
-       //println(a);
-       feedbackShader.set("feedbackAngle", a);
-
-       //TODO: rectangle offset glitches (scale by some velocity?)
-
-       //println(wrist_l, wrist_r, delta);
-       
-    }
-
-    break;
-  }
   } else {
     //feedbackCenter(0.5, 0.5);
     feedbackShader.set("feedbackCenter", 0.5, 0.5);
